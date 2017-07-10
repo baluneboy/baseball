@@ -1,16 +1,25 @@
 #!/usr/bin/env python
 
-# this code adapted from https://github.com/fspinillo/python-baseball.git
-# he had no LICENSE file, so I am adding MIT License to include coverage
-# of this module (file)
+# this code was adapted from https://github.com/fspinillo/python-baseball.git
+# which had no LICENSE file, so I am adding MIT License to include coverage
+# of this module (file)..."baseball has been berry berry good to me"
 
-import sys
-from datetime import datetime, timedelta
-import requests
 import json
+import requests
 
-# TODO refactor these 2 def's to handle whether team is blank or not
 
+def date_url(d):
+    """return URL string for web page to scrape based on input date, d"""
+    url_str = "http://gd2.mlb.com/components/game/mlb/year_%d/month_%02d/day_%02d/master_scoreboard.json" % \
+              (d.year, d.month, d.day)
+    return url_str
+
+
+# FIXME gracefully handle when team you wanted did not play on date you wanted
+
+# TODO add date neatly into each game result display
+
+# TODO refactor these next 2 def's to handle whether team is blank or not
 def get_game_results(game, min_runs=999):
     """return game status when team is not selected (blank)"""
     status = game['status']['status']
@@ -118,13 +127,6 @@ def get_team_results(game, min_runs=999):
         return 'unhandled game status'
 
 
-def date_url(d):
-    """return URL string for feed to scrape based on input date object, d"""
-    url_str = "http://gd2.mlb.com/components/game/mlb/year_%d/month_%02d/day_%02d/master_scoreboard.json" % \
-              (d.year, d.month, d.day)
-    return url_str
-
-
 def show_results(day, team, min_runs=999, from_web=True):
     """describe what this returns and inputs too"""
 
@@ -158,16 +160,3 @@ def show_results(day, team, min_runs=999, from_web=True):
                 results = get_team_results(game)
                 if results:
                     print results
-
-
-if __name__ == '__main__':
-
-    # get day of interest
-    today = datetime.now().date()
-    yesterday = today - timedelta(days=1)
-    date = yesterday
-
-    my_team = "CLE"
-    min_runs = 999
-    from_web = False
-    show_results(date, my_team, min_runs=min_runs, from_web=from_web)

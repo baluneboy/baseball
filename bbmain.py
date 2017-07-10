@@ -11,11 +11,11 @@
 # - some form of "run/process the data" [the "crux"] function, where your actual work happens
 # - a main function to get us from raw form of input arguments to something we can deal with to actually run
 
-# TODO Zack - What is the "crux" function in this module (file)?
+# TODO Zack - How many functions are in this module (file), and which looks most important and why?
 
-# TODO you can and should re-use this template script (this file, this "module") often and maybe refine it
+# TODO you can and should re-use this template script often (and maybe refine it) for command line type programs
 
-# TODO for re-use you'd have to, of course, change the "crux" function to what makes sense for your next project/program
+# TODO ask me how to change this so you can re-use it to do other things
 
 import os
 import sys
@@ -28,7 +28,7 @@ YESTERDAY = str(datetime.datetime.now().date() - datetime.timedelta(days=1))
 
 # default input parameters
 defaults = {
-    'when':         YESTERDAY,    # string that can be parsed to produce a date object
+    'date':         YESTERDAY,    # string that can be parsed to produce a date object
     'team':         'CLE',        # string abbrev for default (home/my) team; ignored when min_runs > 998
     'min_runs':     '999',        # int minimum number of runs scored by any team -- IoT trigger during Summer 2017?
     'from_web':     'True',       # boolean True to scrape from web; otherwise, read from local file (if exists)
@@ -39,16 +39,24 @@ parameters = defaults.copy()
 
 
 def parameters_ok():
-    """check for reasonableness of parameters"""
+    """check for reasonableness of parameters that will be used"""
+
+    # FIXME return False if an input argument does not match defaults keys
+
+    # check for unexpected arguments
+    for p in parameters:
+        if not p in defaults.keys():
+            print 'unexpected input argument name %s' % p
+            return False
 
     # TODO what happens if the input argument for team IS in official/known abbrevs?
     # TODO in effect, where does the program flow branch to
 
     # robustly handle date (day) input string
     try:
-        parameters['when'] = parser.parse(parameters['when']).date()
+        parameters['date'] = parser.parse(parameters['date']).date()
     except Exception, e:
-        print 'could not parse "when" =' + parameters['when'] + ' input because ' + e.message
+        print 'could not parse "date" =' + parameters['date'] + ' input because ' + e.message
         return False
 
     # we want from_web to be boolean type (not a string)
@@ -96,13 +104,13 @@ def print_usage():
 
 
 def scrape_web(params):
-    """briefly state what your actual work is going to do here"""
+    """fetch and print results based on input params"""
     if params['from_web']:
         print 'Scrape MLB web page with these parameters:', params
     else:
         print 'Try to read local file with these parameters:', params
     # print 'These were the defaults                           :', defaults
-    date = params['when']
+    date = params['date']
     team = params['team']
     min_runs = params['min_runs']
     from_web = params['from_web']
@@ -110,7 +118,7 @@ def scrape_web(params):
 
 
 def main(args):
-    """describe main routine here"""
+    """handle input arguments and return Linux-like status code that comes from lower-level function"""
 
     # parse command line arguments
     for p in args[1:]:
