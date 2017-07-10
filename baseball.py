@@ -9,25 +9,33 @@ from datetime import datetime, timedelta
 import requests
 import json
 
+# TODO refactor these 2 def's to handle whether team is blank or not
 
-def get_game_results(game):
+def get_game_results(game, min_runs=999):
     """return game status when team is not selected (blank)"""
     status = game['status']['status']
+    runs_home = game['linescore']['r']['home']
+    runs_away = game['linescore']['r']['away']
     if status == "In Progress":
         return '%s (%s) vs %s (%s) @ %s %s' % (
                 game['away_team_name'],
-                game['linescore']['r']['away'],
+                runs_away,
                 game['home_team_name'],
-                game['linescore']['r']['home'],
+                runs_home,
                 game['venue'],
                 game['status']['status']
             )
     elif status == "Final" or status == "Game Over":
-        return '%s (%s) vs %s (%s) @ %s %s' % (
+        if int(runs_home) >= min_runs or int(runs_away) >= min_runs:
+            alert_prefix = '*** '
+        else:
+            alert_prefix = ''
+        return '%s%s (%s) vs %s (%s) @ %s %s' % (
+                alert_prefix,
                 game['away_team_name'],
-                game['linescore']['r']['away'],
+                runs_away,
                 game['home_team_name'],
-                game['linescore']['r']['home'],
+                runs_home,
                 game['venue'],
                 game['status']['status']
             )
@@ -44,20 +52,27 @@ def get_game_results(game):
         return 'unhandled game status'
 
 
-def get_team_results(game):
+def get_team_results(game, min_runs=999):
     """return game status when team has been selected"""
     status = game['status']['status']
+    runs_home = game['linescore']['r']['home']
+    runs_away = game['linescore']['r']['away']
+    if int(runs_home) >= min_runs or int(runs_away) >= min_runs:
+        alert_prefix = '*** '
+    else:
+        alert_prefix = ''
     if status == "In Progress":
         return \
         '-------------------------------\n' \
-        '%s (%s) vs. %s (%s) @ %s\n' \
+        '%s%s (%s) vs. %s (%s) @ %s\n' \
         '%s: %s of the %s\n' \
         'Pitching: %s || Batting: %s || S: %s B: %s O: %s\n' \
         '-------------------------------' % (
+                alert_prefix,
                 game['away_team_name'],
-                game['linescore']['r']['away'],
+                runs_away,
                 game['home_team_name'],
-                game['linescore']['r']['home'],
+                runs_home,
                 game['venue'],
                 game['status']['status'],
                 game['status']['inning_state'],
@@ -71,13 +86,14 @@ def get_team_results(game):
     elif status == "Final" or status == "Game Over":
         return \
         '-------------------------------\n' \
-        '%s (%s) vs. %s (%s) @ %s\n' \
+        '%s%s (%s) vs. %s (%s) @ %s\n' \
         'W: %s || L: %s || SV: %s\n' \
         '-------------------------------' % (
-                game['away_team_name'],
-                game['linescore']['r']['away'],
+            alert_prefix,
+            game['away_team_name'],
+                runs_away,
                 game['home_team_name'],
-                game['linescore']['r']['home'],
+                runs_home,
                 game['venue'],
                 game['winning_pitcher']['name_display_roster'],
                 game['losing_pitcher']['name_display_roster'],
@@ -86,10 +102,11 @@ def get_team_results(game):
     elif status == "Pre-Game" or status == "Preview":
         return \
         '-------------------------------\n' \
-        '%s vs %s @ %s %s%s\n' \
+        '%s%s vs %s @ %s %s%s\n' \
         'P: %s || P: %s\n' \
         '-------------------------------' % (
-                game['away_team_name'],
+            alert_prefix,
+            game['away_team_name'],
                 game['home_team_name'],
                 game['venue'],
                 game['home_time'],
@@ -108,7 +125,7 @@ def date_url(d):
     return url_str
 
 
-def show_results(day, team, alert_runs=12, from_web=True):
+def show_results(day, team, min_runs=999, from_web=True):
     """describe what this returns and inputs too"""
 
     # we cache (to debug) in case web site blocks on excessive hits from same ip address
@@ -117,24 +134,23 @@ def show_results(day, team, alert_runs=12, from_web=True):
         baseball_data = requests.get(date_url(day))
         game_data = baseball_data.json()
     else:
-        # FIXME we naively assume local file exists here
+        # FIXME we naively assume local file exists here (probably best to handle this sooner like in bbmain.py
         # read json data from local file
-        fname = '/Users/ken/Documents/baseball/' + day.isoformat() + '.json'
-        with open(fname, 'r') as data_file:
+        json_file = '/Users/ken/Documents/baseball/' + day.isoformat() + '.json'
+        with open(json_file, 'r') as data_file:
             game_data = json.load(data_file)
 
     # get game data as array
     game_array = game_data['data']['games']['game']
 
-    # TODO use alert_runs to trigger something (think IoT)
-    print '*** We are currently ignoring alert_runs = %d. ***' % alert_runs
+    # TODO use alert_runs to trigger something (think IoT usefulness or interesting demo)
 
-    # FIXME how do we handle double-headers?
+    # FIXME how are double-headers handled?
 
     # display results for team of interest
     for game in game_array:
         if team == "":
-            results = get_game_results(game)
+            results = get_game_results(game, min_runs=min_runs)
             if results:
                 print results
         else:
@@ -152,6 +168,6 @@ if __name__ == '__main__':
     date = yesterday
 
     my_team = "CLE"
-    min_runs = 12
+    min_runs = 999
     from_web = False
-    show_results(date, my_team, alert_runs=min_runs, from_web=from_web)
+    show_results(date, my_team, min_runs=min_runs, from_web=from_web)

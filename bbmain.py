@@ -13,7 +13,8 @@
 
 # TODO Zack - What is the "crux" function in this module (file)?
 
-# TODO you can and should re-use this template script often (and maybe refine it)
+# TODO you can and should re-use this template script (this file, this "module") often and maybe refine it
+
 # TODO for re-use you'd have to, of course, change the "crux" function to what makes sense for your next project/program
 
 import os
@@ -27,10 +28,10 @@ YESTERDAY = str(datetime.datetime.now().date() - datetime.timedelta(days=1))
 
 # default input parameters
 defaults = {
-    'when':         YESTERDAY,    # only real choices are yesterday or (anything else is today)
-    'team':         'CLE',        # the home team
-    'alert_runs':   '12',         # int; maybe use as IoT trigger at some point during Summer 2017?
-    'from_web':     'True',       # boolean True to scrape from web; otherwise, try to read from local file
+    'when':         YESTERDAY,    # string that can be parsed to produce a date object
+    'team':         'CLE',        # string abbrev for default (home/my) team; ignored when min_runs > 998
+    'min_runs':     '999',        # int minimum number of runs scored by any team -- IoT trigger during Summer 2017?
+    'from_web':     'True',       # boolean True to scrape from web; otherwise, read from local file (if exists)
 }
 
 # we want to remember what defaults were, so let's copy to protect it from changes
@@ -53,26 +54,34 @@ def parameters_ok():
     # we want from_web to be boolean type (not a string)
     parameters['from_web'] = parameters['from_web'].title() == 'True'
 
-    # FIXME if from_web is False, we naively assume local file exists here, so put explicit check here
+    # FIXME if from_web is False, we naively assume local file exists here; put explicit check for file here
 
-    # robustly handle team argument (abbreviation, nickname, upper/lowercase, and such)
-    parameters['team'] = parameters['team'].upper()  # make it uppercase for convenience
-    if not parameters['team'] in team_abbrevs:
-        # if input argument for team NOT in official/known abbrevs, then
-        # python will run this indented block of code below the if
-        nickname = team_nicknames.get(parameters['team'], None)
-        if not nickname:
-            print 'cannot work with team = %s' % parameters['team']
-            return False
-        else:
-            parameters['team'] = team_nicknames[parameters['team']]
-
-    # command line args are strings, but we want alert_runs as an int
+    # command line arguments come in as strings, but we want min_runs as an int
     try:
-        parameters['alert_runs'] = int(parameters['alert_runs'])
+        parameters['min_runs'] = int(parameters['min_runs'])  # type cast as int
     except Exception, e:
-        print 'could not convert alert_runs to int > %s' % e.message
+        # FIXME use None as value to signal downstream call that we want to ignore min_runs
+        print 'ignoring min_runs, could not convert to int because %s' % e.message
+        print 'FIXME - THIS IS WHERE WE WANT TO USE None FOR DOWNSTREAM FLAG TO IGNORE min_runs'
         return False
+
+    # TODO how can we handle min_runs of zero AND isolate/identify "my team" (input arg) at same time?
+
+    # if min_runs is reasonable value to use, then we need to check all scores (so we can ignore team input argument)
+    if parameters['min_runs'] < 999:
+        parameters['team'] = ''
+    else:
+        # robustly handle team argument (abbreviation, nickname, upper/lowercase, and such)
+        parameters['team'] = parameters['team'].upper()  # make it uppercase for convenience (as a convention)
+        if not parameters['team'] in team_abbrevs:
+            # if input argument for team NOT in official/known abbrevs, then
+            # python will run this indented block of code below the if
+            nickname = team_nicknames.get(parameters['team'], None)
+            if not nickname:
+                print 'unknown team identifier: %s' % parameters['team']
+                return False
+            else:
+                parameters['team'] = team_nicknames[parameters['team']]
 
     return True  # all OK; otherwise, return False somewhere above in this def
 
@@ -95,9 +104,9 @@ def scrape_web(params):
     # print 'These were the defaults                           :', defaults
     date = params['when']
     team = params['team']
-    alert_runs = params['alert_runs']
+    min_runs = params['min_runs']
     from_web = params['from_web']
-    show_results(date, team, alert_runs=alert_runs, from_web=from_web)
+    show_results(date, team, min_runs=min_runs, from_web=from_web)
 
 
 def main(args):
