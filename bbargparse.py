@@ -38,7 +38,7 @@ def parse_inputs():
 
     # date of game
     help_date = "date of game; default=%s" % str(_DEFAULT_DATE)
-    parser.add_argument('-d', '--date', nargs='?', const=_DEFAULT_DATE, default=_DEFAULT_DATE,
+    parser.add_argument('-d', '--date', nargs=1, default=_DEFAULT_DATE,
                         type=date_parsed_str,
                         help=help_date)
 
@@ -79,6 +79,7 @@ def show_args(args):
         print "date = {}".format(str(args.date))
     else:
         print my_date
+    print args
 
 # we want to remember what defaults were, so let's copy to protect it from changes
 parameters = defaults.copy()
