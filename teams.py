@@ -1,17 +1,4 @@
-# This module (file) defines nicknames and abbreviations.
-
-# the following dict maps nicknames to some teams
-# note: some teams (values) get mapped to from multiple nicknames (values)
-team_nicknames = {
-    "HOME":             "CLE",
-    "TRIBE":            "CLE",
-    "THETRIBE":         "CLE",
-    "BEANTOWN":         "BOS",
-    "MOTORCITY":        "DET",
-    "WINDYCITY":        "CHC",
-    "GREENRIVER":       "CHC",
-    }
-
+"""This module (file) defines nicknames and abbreviations."""
 
 # the list below are original "official" abbrevs gotten by scraping the following URL:
 # http://gd2.mlb.com/components/game/mlb/year_2017/month_07/day_02/master_scoreboard.json
