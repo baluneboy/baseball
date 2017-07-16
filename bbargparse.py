@@ -36,6 +36,7 @@ def date_parsed_str(s):
 def parse_inputs():
     parser = argparse.ArgumentParser()
 
+
     # date of game
     help_date = "date of game; default=%s" % str(_DEFAULT_DATE)
     parser.add_argument('-d', '--date', nargs=1, default=_DEFAULT_DATE,
@@ -55,10 +56,14 @@ def parse_inputs():
                         help=help_runs)
 
     # boolean for getting game data source from web, if True; otherwise from local cache if it exists
-    help_from_web = "boolean True to get game data from web (False for local cache); default=%s" % str(_DEFAULT_FROM_WEB)
-    parser.add_argument('from_web', nargs='?', default=_DEFAULT_FROM_WEB,
-                        type=bool,
-                        help=help_from_web)
+    help_from_web = "get game data by scraping MLB web page"
+    help_not_from_web = "get game data from local cached file (if it exists)"
+    #parser.add_argument('from_web', nargs='?', default=_DEFAULT_FROM_WEB,
+    #                    type=bool,
+    #                    help=help_from_web)
+    parser.add_argument('-w', '--from-web',     dest='from_web', action='store_true', help=help_from_web)
+    parser.add_argument('-n', '--not-from-web', dest='from_web', action='store_false', help=help_not_from_web)
+    parser.set_defaults(from_web=True)
 
     # verbosity
     parser.add_argument("-v", "--verbosity",
