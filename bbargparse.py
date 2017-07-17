@@ -6,12 +6,11 @@ users give the program invalid arguments.
 """
 
 import os
-import sys
 import argparse
 import datetime
 from dateutil import parser as date_parser
+
 from teams import team_abbrevs
-from baseball import show_results
 
 
 _DEFAULT_DATE = datetime.datetime.now().date() - datetime.timedelta(days=1)
@@ -53,7 +52,7 @@ def parse_inputs():
 
     # date of game
     help_date = "date of game; default=%s" % str(_DEFAULT_DATE)
-    parser.add_argument('-d', '--date', nargs=1, default=_DEFAULT_DATE,
+    parser.add_argument('-d', '--date', default=_DEFAULT_DATE,
                         type=date_str,
                         help=help_date)
 
@@ -108,29 +107,3 @@ def print_usage():
         print '\t%s=%s' % (i, defaults[i])
 
 
-def get_bbgame_results(args):
-    """fetch and print results based on input arguments"""
-    if args.from_web:
-        print 'Scrape MLB web page with these parameters:'
-        show_args(args)
-    else:
-        print 'Try to read local file with these parameters:'
-        show_args(args)
-    #show_results(args.date, args.team, min_runs=args.runs, from_web=args.from_web)
-
-
-def main(args):
-    """handle input arguments and return Linux-like status code that comes from lower-level function"""
-
-    # parse command line arguments
-    # FIXME need to verify parameters or otherwise validate input
-    if True:  # parameters_ok():
-        get_bbgame_results(args)
-        return 0
-    print_usage()
-
-
-if __name__ == '__main__':
-    """run main with command line args and return exit code"""
-    args = parse_inputs()
-    sys.exit(main(args))

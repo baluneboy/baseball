@@ -2,10 +2,21 @@
 
 # this code was adapted from https://github.com/fspinillo/python-baseball.git
 # which had no LICENSE file, so I am adding MIT License to include coverage
-# of this module (file)..."baseball has been berry berry good to me"
+# of this module (file)...oh, and "baseball has been berry berry good to me"
 
+import sys
 import json
 import requests
+
+from bbargparse import parse_inputs, show_args, print_usage
+
+# FIXME gracefully handle when team you wanted did not play on date you wanted
+
+# FIXME graceful EARLY handling of case when cached file does not exist
+
+# TODO add date neatly into each game result display
+
+# TODO incorporate date from info that is embedded in game results (not just implicit from input)
 
 
 def date_url(d):
@@ -15,11 +26,8 @@ def date_url(d):
     return url_str
 
 
-# FIXME gracefully handle when team you wanted did not play on date you wanted
-
-# TODO add date neatly into each game result display
-
 # TODO refactor these next 2 def's to handle whether team is blank or not
+
 def get_game_results(game, min_runs=999):
     """return game status when team is not selected (blank)"""
     status = game['status']['status']
@@ -32,7 +40,7 @@ def get_game_results(game, min_runs=999):
                 game['home_team_name'],
                 runs_home,
                 game['venue'],
-                game['status']['status']
+                status
             )
     elif status == "Final" or status == "Game Over":
         if int(runs_home) >= min_runs or int(runs_away) >= min_runs:
@@ -46,7 +54,7 @@ def get_game_results(game, min_runs=999):
                 game['home_team_name'],
                 runs_home,
                 game['venue'],
-                game['status']['status']
+                status
             )
     elif status == "Pre-Game" or status == "Preview":
         return '%s vs %s @ %s %s%s %s' % (
@@ -55,7 +63,7 @@ def get_game_results(game, min_runs=999):
                 game['venue'],
                 game['home_time'],
                 game['hm_lg_ampm'],
-                game['status']['status']
+                status
             )
     else:
         return 'unhandled game status'
@@ -136,7 +144,7 @@ def show_results(day, team, min_runs=999, from_web=True):
         baseball_data = requests.get(date_url(day))
         game_data = baseball_data.json()
     else:
-        # FIXME we naively assume local file exists here (probably best to handle this sooner like in bbmain.py
+        # FIXME we naively assume local file exists here (probably best to handle this sooner like in bbargparse.py
         # read json data from local file
         json_file = '/Users/ken/Documents/baseball/' + day.isoformat() + '.json'
         with open(json_file, 'r') as data_file:
@@ -160,3 +168,30 @@ def show_results(day, team, min_runs=999, from_web=True):
                 results = get_team_results(game)
                 if results:
                     print results
+
+
+def main(args):
+    """handle input arguments and return Linux-like status code that comes from call to get game day results"""
+
+    # FIXME need to verify parameters or otherwise validate input
+
+    # parse command line arguments
+    if True:  # parameters_ok():
+
+        if args.from_web:
+            print 'Scrape MLB web page with these parameters:'
+            show_args(args)
+        else:
+            print 'Try to read local (cached) file with these parameters:'
+
+        show_results(args.date, args.team, min_runs=args.runs, from_web=args.from_web)
+
+        return 0
+
+    print_usage()
+
+
+if __name__ == '__main__':
+    """run main with command line args and return exit code"""
+    input_args = parse_inputs()
+    sys.exit(main(input_args))
