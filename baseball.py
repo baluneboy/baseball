@@ -8,15 +8,14 @@ import sys
 import json
 import requests
 
-from bbargparse import parse_inputs, show_args, print_usage
+from bbargparse import parse_inputs, show_args, print_usage, get_json_filename
+
 
 # FIXME gracefully handle when team you wanted did not play on date you wanted
 
-# FIXME graceful EARLY handling of case when cached file does not exist
-
 # TODO add date neatly into each game result display
 
-# TODO incorporate date from info that is embedded in game results (not just implicit from input)
+# TODO more thoughtful display format (date from game data, cache-read vs. web-scraped, etc.)
 
 
 def date_url(d):
@@ -135,8 +134,11 @@ def get_team_results(game, min_runs=999):
         return 'unhandled game status'
 
 
-def show_results(day, team, min_runs=999, from_web=True):
+def show_results(args):
     """describe what this returns and inputs too"""
+
+    # FIXME refactor this function to get rid of following clunky line
+    day, team, min_runs, from_web = args.date, args.team, args.runs, args.from_web
 
     # we cache (to debug) in case web site blocks on excessive hits from same ip address
     if from_web:
@@ -144,9 +146,9 @@ def show_results(day, team, min_runs=999, from_web=True):
         baseball_data = requests.get(date_url(day))
         game_data = baseball_data.json()
     else:
-        # FIXME we naively assume local file exists here (probably best to handle this sooner like in bbargparse.py
+        # FIXME this should be a graceful try/except handler
         # read json data from local file
-        json_file = '/Users/ken/Documents/baseball/' + day.isoformat() + '.json'
+        json_file = get_json_filename(args)
         with open(json_file, 'r') as data_file:
             game_data = json.load(data_file)
 
@@ -184,7 +186,7 @@ def main(args):
         else:
             print 'Try to read local (cached) file with these parameters:'
 
-        show_results(args.date, args.team, min_runs=args.runs, from_web=args.from_web)
+        show_results(args)
 
         return 0
 

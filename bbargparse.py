@@ -17,6 +17,7 @@ _DEFAULT_DATE = datetime.datetime.now().date() - datetime.timedelta(days=1)
 _DEFAULT_TEAM = 'CLE'
 _DEFAULT_RUNS = 999
 _DEFAULT_FROM_WEB = True
+_DEFAULT_CACHE = '/Users/ken/Documents/baseball'
 
 
 def date_str(d):
@@ -41,14 +42,26 @@ def runs_str(r):
 def team_str(t):
     """return string provided as uppercase if it exists in team_abbrevs"""
     t = t.upper()
-    if not t in team_abbrevs:
+    if t not in team_abbrevs:
         raise argparse.ArgumentTypeError('"%s" is not in official list of team_abbrevs' % t)
     return t
 
 
+def cache_str(c):
+    """return string provided if dir exists locally"""
+    if not os.path.exists(c):
+        raise argparse.ArgumentTypeError('"%s" does not exist as local cache dir' % c)
+    return c
+
+
+def get_json_filename(a):
+    """return string representing local cached json file"""
+    return os.path.join(a.cache, a.date.isoformat() + '.json')
+
+
 def parse_inputs():
     """parse input arguments using argparse from standard library"""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='"Baseball has been berry, berry good to me."')
 
     # date of game
     help_date = "date of game; default=%s" % str(_DEFAULT_DATE)
@@ -61,6 +74,12 @@ def parse_inputs():
     parser.add_argument('-t', '--team', default=_DEFAULT_TEAM,
                         type=team_str,
                         help=help_team)
+
+    # local cache directory
+    help_cache = 'cache directory; default=%s' % _DEFAULT_CACHE
+    parser.add_argument('-c', '--cache', default=_DEFAULT_CACHE,
+                        type=cache_str,
+                        help=help_cache)
 
     # minimum number of runs scored by a team in a game to trigger runs_callback
     help_runs = "minimum number runs scored by a team in a game to trigger runs_callback; default=%d" % _DEFAULT_RUNS
@@ -80,8 +99,17 @@ def parse_inputs():
                         action="count",
                         help="increase output verbosity")
 
-    # return parsed args
-    return parser.parse_args()
+    # get parsed args
+    args = parser.parse_args()
+
+    # FIXME where is pythonic spot for checking parsed args
+    # if not web-scraping, then check for locally cached json file
+    if not args.from_web:
+        json_file = get_json_filename(args)
+        if not os.path.exists(json_file):
+            raise Exception('"%s" does not exist as local json file' % json_file)
+
+    return args
 
 
 def show_args(args):
