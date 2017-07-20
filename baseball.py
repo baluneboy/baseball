@@ -148,7 +148,7 @@ def show_results(args):
     else:
         # FIXME this should be a graceful try/except handler
         # read json data from local file
-        json_file = get_json_filename(args)
+        json_file = get_json_filename(args.cache, args.date)
         with open(json_file, 'r') as data_file:
             game_data = json.load(data_file)
 

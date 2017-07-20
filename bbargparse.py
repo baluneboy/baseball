@@ -54,9 +54,9 @@ def cache_str(c):
     return c
 
 
-def get_json_filename(a):
-    """return string representing local cached json file"""
-    return os.path.join(a.cache, a.date.isoformat() + '.json')
+def get_json_filename(loc_dir, day):
+    """return string for full filename of local cached json file given local directory, loc_dir, and date of interest"""
+    return os.path.join(loc_dir, day.isoformat() + '.json')
 
 
 def parse_inputs():
@@ -105,7 +105,7 @@ def parse_inputs():
     # FIXME where is pythonic spot for checking parsed args
     # if not web-scraping, then check for locally cached json file
     if not args.from_web:
-        json_file = get_json_filename(args)
+        json_file = get_json_filename(args.cache, args.date)
         if not os.path.exists(json_file):
             raise Exception('"%s" does not exist as local json file' % json_file)
 
