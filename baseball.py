@@ -4,11 +4,11 @@
 # which had no LICENSE file, so I am adding MIT License to include coverage
 # of this module (file)...oh, and "baseball has been berry berry good to me"
 
+import os
 import sys
-import json
-import requests
 
-from bbargparse import parse_inputs, show_args, print_usage, get_json_filename
+import bbargparse as bba
+import download_json as dj
 
 
 # FIXME gracefully handle when team you wanted did not play on date you wanted
@@ -16,14 +16,6 @@ from bbargparse import parse_inputs, show_args, print_usage, get_json_filename
 # TODO add date neatly into each game result display
 
 # TODO more thoughtful display format (date from game data, cache-read vs. web-scraped, etc.)
-
-
-def date_url(d):
-    """return URL string for web page to scrape based on input date, d"""
-    url_str = "http://gd2.mlb.com/components/game/mlb/year_%d/month_%02d/day_%02d/master_scoreboard.json" % \
-              (d.year, d.month, d.day)
-    return url_str
-
 
 # TODO refactor these next 2 def's to handle whether team is blank or not
 
@@ -134,23 +126,41 @@ def get_team_results(game, min_runs=999):
         return 'unhandled game status'
 
 
+def divide(x, y):
+    result = None
+    try:
+        result = x / y
+    except ZeroDivisionError:
+        print "division by zero!"
+    except:
+        print "unhandled exception:", sys.exc_info()[0]
+        raise
+    else:
+        print "done with result", result
+    finally:
+        print "executing finally clause"
+
+    return result
+
+
 def show_results(args):
     """describe what this returns and inputs too"""
 
-    # FIXME refactor this function to get rid of following clunky line
-    day, team, min_runs, from_web = args.date, args.team, args.runs, args.from_web
-
-    # we cache (to debug) in case web site blocks on excessive hits from same ip address
-    if from_web:
+    # we cache local files: MLB should not rewrite history OR in case their site blocks on excessive hits from my ip
+    if args.from_web:
         # build json data structure from feed
-        baseball_data = requests.get(date_url(day))
-        game_data = baseball_data.json()
+        # ### baseball_data = requests.get(date_url(day))
+        # ### game_data = baseball_data.json()
+        game_data = dj.download_json(args.date, args.cache)
+        if game_data is None:
+            print 'something went wrong with download_json'
+            return False
+
+    # FIXME this should be a graceful try/except handler, we naively assume all's well with now getting from cached file
     else:
-        # FIXME this should be a graceful try/except handler
-        # read json data from local file
-        json_file = get_json_filename(args.cache, args.date)
-        with open(json_file, 'r') as data_file:
-            game_data = json.load(data_file)
+        # read game data from json file
+        json_file = bba.get_json_filename(args.cache, args.date)
+        game_data = dj.read_game_data_from_json_file(json_file)
 
     # get game data as array
     game_array = game_data['data']['games']['game']
@@ -161,39 +171,57 @@ def show_results(args):
 
     # display results for team of interest
     for game in game_array:
-        if team == "":
-            results = get_game_results(game, min_runs=min_runs)
+        if args.team == "":
+            results = get_game_results(game, min_runs=args.runs)
             if results:
                 print results
         else:
-            if team in [game['home_name_abbrev'], game['away_name_abbrev']]:
+            if args.team in [game['home_name_abbrev'], game['away_name_abbrev']]:
                 results = get_team_results(game)
                 if results:
                     print results
 
+    return True
 
-def main(args):
-    """handle input arguments and return Linux-like status code that comes from call to get game day results"""
+
+def get_args_issues(a):
+    """return list of strings (messages about issues with input args)"""
+    issues = []
+    # FIXME where is pythonic spot for checking parsed args
+    # if not from web, then only check for locally cached json file
+    if not a.from_web:
+        json_file = bba.get_json_filename(a.cache, a.date)
+        if not os.path.exists(json_file):
+            issues.append('you chose not-from-web option, but "%s" does not exist' % json_file)
+    return issues
+
+
+def show_args_issues(issues):
+    for i, issue in enumerate(issues):
+        print 'issue {0}: {1}'.format(i+1, issue)
+
+
+def main():
+    """handle input arguments and return Linux-like status code that comes from call to show game day results"""
 
     # FIXME need to verify parameters or otherwise validate input
 
     # parse command line arguments
-    if True:  # parameters_ok():
+    args = bba.parse_inputs()
 
-        if args.from_web:
-            print 'Scrape MLB web page with these parameters:'
-            show_args(args)
-        else:
-            print 'Try to read local (cached) file with these parameters:'
+    # if any args issues, then show issue(s) and return error code
+    args_issues = get_args_issues(args)
+    if args_issues:
+        show_args_issues(args_issues)
+        return -1
 
-        show_results(args)
+    # show desired game day results
+    show_results(args)
 
-        return 0
-
-    print_usage()
+    # return exit code zero for success
+    return 0
 
 
 if __name__ == '__main__':
     """run main with command line args and return exit code"""
-    input_args = parse_inputs()
-    sys.exit(main(input_args))
+    sys.exit(main())

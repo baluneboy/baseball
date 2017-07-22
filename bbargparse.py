@@ -10,7 +10,7 @@ import argparse
 import datetime
 from dateutil import parser as date_parser
 
-from teams import team_abbrevs
+import teams
 
 
 _DEFAULT_DATE = datetime.datetime.now().date() - datetime.timedelta(days=1)
@@ -40,10 +40,10 @@ def runs_str(r):
 
 
 def team_str(t):
-    """return string provided as uppercase if it exists in team_abbrevs"""
+    """return uppercase of string input, provided it exists in teams.team_abbrevs"""
     t = t.upper()
-    if t not in team_abbrevs:
-        raise argparse.ArgumentTypeError('"%s" is not in official list of team_abbrevs' % t)
+    if t not in teams.team_abbrevs:
+        raise argparse.ArgumentTypeError('"%s" is not in official list of teams.team_abbrevs' % t)
     return t
 
 
@@ -102,13 +102,6 @@ def parse_inputs():
     # get parsed args
     args = parser.parse_args()
 
-    # FIXME where is pythonic spot for checking parsed args
-    # if not web-scraping, then check for locally cached json file
-    if not args.from_web:
-        json_file = get_json_filename(args.cache, args.date)
-        if not os.path.exists(json_file):
-            raise Exception('"%s" does not exist as local json file' % json_file)
-
     return args
 
 
@@ -124,14 +117,3 @@ def show_args(args):
     else:
         print my_date
     print args
-
-
-def print_usage():
-    """print helpful text how to run the program"""
-    # print version
-    print 'usage: %s [options]' % os.path.abspath(__file__)
-    print '       options (and default values) are:'
-    for i in defaults.keys():
-        print '\t%s=%s' % (i, defaults[i])
-
-
