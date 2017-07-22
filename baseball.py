@@ -13,6 +13,8 @@ import download_json as dj
 
 # FIXME gracefully handle when team you wanted did not play on date you wanted
 
+# TODO introduce config file/parser for things (like at least) good default cache dir setting
+
 # TODO add date neatly into each game result display
 
 # TODO more thoughtful display format (date from game data, cache-read vs. web-scraped, etc.)
