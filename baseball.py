@@ -7,9 +7,10 @@
 import os
 import sys
 
-import bbargparse as bba
-import download_json as dj
+import bbargparse
+import download_json
 
+# FIXME only cache file if date of interest was 2 days ago or earlier
 
 # FIXME gracefully handle when team you wanted did not play on date you wanted
 
@@ -20,6 +21,7 @@ import download_json as dj
 # TODO more thoughtful display format (date from game data, cache-read vs. web-scraped, etc.)
 
 # TODO refactor these next 2 def's to handle whether team is blank or not
+
 
 def get_game_results(game, min_runs=999):
     """return game status when team is not selected (blank)"""
@@ -146,14 +148,14 @@ def divide(x, y):
 
 
 def show_results(args):
-    """describe what this returns and inputs too"""
+    """show game results based on input args for date and team of interest"""
 
     # we cache local files: MLB should not rewrite history OR in case their site blocks on excessive hits from my ip
     if args.from_web:
         # build json data structure from feed
         # ### baseball_data = requests.get(date_url(day))
         # ### game_data = baseball_data.json()
-        game_data = dj.download_json(args.date, args.cache)
+        game_data = download_json.download_json(args.date, args.cache)
         if game_data is None:
             print 'something went wrong with download_json'
             return False
@@ -161,8 +163,8 @@ def show_results(args):
     # FIXME this should be a graceful try/except handler, we naively assume all's well with now getting from cached file
     else:
         # read game data from json file
-        json_file = bba.get_json_filename(args.cache, args.date)
-        game_data = dj.read_game_data_from_json_file(json_file)
+        json_file = bbargparse.get_json_filename(args.cache, args.date)
+        game_data = download_json.read_game_data_from_json_file(json_file)
 
     # get game data as array
     game_array = game_data['data']['games']['game']
@@ -186,21 +188,17 @@ def show_results(args):
     return True
 
 
-def get_args_issues(a):
-    """return list of strings (messages about issues with input args)"""
-    issues = []
+def args_ok(a):
+    """return boolean True if args ok; otherwise squawk and return False"""
     # FIXME where is pythonic spot for checking parsed args
+    bln = True
     # if not from web, then only check for locally cached json file
     if not a.from_web:
-        json_file = bba.get_json_filename(a.cache, a.date)
+        json_file = bbargparse.get_json_filename(a.cache, a.date)
         if not os.path.exists(json_file):
-            issues.append('you chose not-from-web option, but "%s" does not exist' % json_file)
-    return issues
-
-
-def show_args_issues(issues):
-    for i, issue in enumerate(issues):
-        print 'issue {0}: {1}'.format(i+1, issue)
+            print 'you chose not-from-web option, but "%s" does not exist' % json_file
+            bln = False
+    return bln
 
 
 def main():
@@ -209,12 +207,10 @@ def main():
     # FIXME need to verify parameters or otherwise validate input
 
     # parse command line arguments
-    args = bba.parse_inputs()
+    args = bbargparse.parse_inputs()
 
-    # if any args issues, then show issue(s) and return error code
-    args_issues = get_args_issues(args)
-    if args_issues:
-        show_args_issues(args_issues)
+    # if args not ok, then squawk and return exit code of -1
+    if not args_ok(args):
         return -1
 
     # show desired game day results

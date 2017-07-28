@@ -6,6 +6,7 @@ import os
 import sys
 import json
 import requests
+import datetime
 
 import bbargparse as bba
 
@@ -41,6 +42,7 @@ def date_url(d):
 def read_game_data_from_json_file(json_file):
     """read json data from local file"""
     game_data = None
+    print 'reading game data from file...',
     try:
         with open(json_file, 'r') as f:
             game_data = json.load(f)
@@ -52,7 +54,7 @@ def read_game_data_from_json_file(json_file):
         print "unhandled exception:", sys.exc_info()[0]
         raise
     else:
-        print 'done reading json from {0}'.format(json_file)
+        print 'done reading from "{0}"'.format(json_file)
     finally:
         print 'no cleanup needed after reading json file'
 
@@ -60,7 +62,7 @@ def read_game_data_from_json_file(json_file):
 
 
 def download_json(day, out_dir):
-    """download_json json file and return game data"""
+    """download_json json file and return game data; cache file locally if more than one day old"""
     game_data = None
     url_str = date_url(day)
     destination_filename = bba.get_json_filename(out_dir, day)
@@ -70,14 +72,20 @@ def download_json(day, out_dir):
         print 'non-existent output (cache) directory "%s"' % out_dir
     else:
         if os.path.exists(destination_filename):
-            print 'no need to download_json json because "%s" exists already' % destination_filename
+            print 'using cached json file "%s"' % destination_filename
             game_data = read_game_data_from_json_file(destination_filename)
         else:
             try:
                 print 'downloading json file for %s...' % day.isoformat()
                 resp = requests.get(url_str)
-                with open(destination_filename, 'w') as f:
-                    f.write(resp.content)
+                # check if day is at least one day (86400 seconds) ago for caching
+                dtmoi = datetime.datetime.combine(day, datetime.datetime.max.time())
+                delta_secs = (datetime.datetime.now() - dtmoi).total_seconds()
+                # print "delta seconds", delta_secs
+                if delta_secs > 86400:
+                    print 'caching file'
+                    with open(destination_filename, 'w') as f:
+                        f.write(resp.content)
                 game_data = resp.json()
             except requests.exceptions.Timeout:
                 # Maybe set up for a retry, or continue in a retry loop
