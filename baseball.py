@@ -10,9 +10,13 @@ import sys
 import bbargparse
 import download_json
 
-# FIXME only cache file if date of interest was 2 days ago or earlier
+# FIXME when a rainout (postpone) occurs do we get linescore error and how to gracefully handle
+
+# FIXME only cache file if date of interest was 1 day ago or earlier
 
 # FIXME gracefully handle when team you wanted did not play on date you wanted
+
+# TODO how to get ALL via what mechanism [ team = 'all' ? ]
 
 # TODO introduce config file/parser for things (like at least) good default cache dir setting
 
@@ -26,6 +30,9 @@ import download_json
 def get_game_results(game, min_runs=999):
     """return game status when team is not selected (blank)"""
     status = game['status']['status']
+    if status.lower() == 'postponed':
+        # FIXME add a few more details (like teams, field)
+        return 'postponed'
     runs_home = game['linescore']['r']['home']
     runs_away = game['linescore']['r']['away']
     if status == "In Progress":
@@ -67,6 +74,9 @@ def get_game_results(game, min_runs=999):
 def get_team_results(game, min_runs=999):
     """return game status when team has been selected"""
     status = game['status']['status']
+    if status.lower() == 'postponed':
+        # FIXME add a few more details (like teams, field)
+        return 'postponed'
     runs_home = game['linescore']['r']['home']
     runs_away = game['linescore']['r']['away']
     if int(runs_home) >= min_runs or int(runs_away) >= min_runs:

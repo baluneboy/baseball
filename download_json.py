@@ -83,7 +83,7 @@ def download_json(day, out_dir):
                 delta_secs = (datetime.datetime.now() - dtmoi).total_seconds()
                 # print "delta seconds", delta_secs
                 if delta_secs > 86400:
-                    print 'caching file'
+                    print 'saving file to local cache directory'
                     with open(destination_filename, 'w') as f:
                         f.write(resp.content)
                 game_data = resp.json()
